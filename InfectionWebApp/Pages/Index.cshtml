@@ -1,0 +1,110 @@
+﻿@page
+@model IndexModel
+
+@using InfectionWebApp.Models
+
+@{
+    ViewData["Title"] = "Home page";
+    var place = ViewData["Place"] as Place;
+    var pastProgressions = ViewData["PastProjection"] as List<Projection>;
+
+    int infectionsAvoided = int.Parse(ViewData["InfectionsAvoided"].ToString());
+    int lifesSpared = (int)(infectionsAvoided * 0.0182);
+}
+<div class="text-center">
+    <h1 class="display-4">@place.Name</h1>
+
+    <p>
+        <h3>Here we can see the effectiveness of our effort.</h3> We have projected new infections with no isolation mesures.
+        Every day with new data releases we will update the projection and compare with the previous one, so we can see how many
+        infections we are avoiding and lifes we are saving... let's keep flating the curve!
+    </p>
+</div>
+<p>
+    <h4>Past Predictions</h4>
+    <ul>
+        @foreach (var projection in pastProgressions)
+        {
+            <li>@projection.Date.AddDays(-8).ToString("dd/MM/yyyy") - <b>@projection.Confirmed.ToString("##,##.##")</b></li>
+        }
+    </ul>
+
+    <h4>We avoided aprox. <span style="color: green">@infectionsAvoided.ToString("##,##.##")*</span> new infections!!! <3 </h4>
+    <h5>We saved aprox. <span style="color: green">@lifesSpared*</span> lifes</h5>
+</p>
+<p>
+    <b class="small">*the numbers are based a simple mathematical regression - datasource: <a href="https://ici.radio-canada.ca/info/2020/coronavirus-covid-19-pandemie-cas-carte-maladie-symptomes-propagation">radio-canada</a> - Last Data Update: @place.DateUpdate</b>
+</p>
+<hr />
+<div id="chartContainer" style="height: 370px; width: 100%;"></div>
+<br />
+<div style="width: 45%; float: left;">
+    <p>
+        <h1>Historic Data</h1>
+    </p>
+    <table class="table">
+        <thread>
+            <tr>
+                <th>Date</th>
+                <th>Infection</th>
+            </tr>
+        </thread>
+        <tbody>
+            @foreach (var history in place.History)
+            {
+                <tr>
+                    <td>@history.Date.ToString("dd/MM/yyyy")</td>
+                    <td>@history.Confirmed</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div style="width: 45%; float: right">
+    <p>
+        <h1>Projection (7 days)</h1>
+    </p>
+    <table class="table">
+        <thread>
+            <tr>
+                <th>Date</th>
+                <th>Infection</th>
+            </tr>
+        </thread>
+        <tbody>
+            @foreach (var history in place.Projections)
+            {
+                <tr>
+                    <td>@history.Date.ToString("dd/MM/yyyy")</td>
+                    <td>@history.Confirmed</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<script type="text/javascript">
+    window.onload = function () {
+        var chart = new CanvasJS.Chart("chartContainer", {
+	        animationEnabled: true,
+	        title: {
+		        text: "Projection of new cases for next 7 days (NO ISOLATION)"
+	        },
+	        axisY: {
+		        includeZero: false
+	        },
+	        toolTip: {
+		        shared: true
+	        },
+	        data: [{
+		        type: "line",
+		        name: "Blue (historical) - Red (projected)",
+		        showInLegend: true,
+		        dataPoints: @Html.Raw(ViewData["InfectionDataPoints"])
+	        }]
+        });
+
+        chart.render();
+    }
+</script>
